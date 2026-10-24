@@ -1,67 +1,74 @@
-# 0x Sneaky Alpha for iPhone (web app)
+# Welcome to 0x Sneaky Alpha for iPhone 👋
 
-0x Sneaky Alpha as an installable web app (PWA) for iPhone. Open it once in Safari, tap **Share → Add to Home Screen**, and it runs full screen like a normal app. No Mac, no App Store, no Apple developer account.
+**Your AI chat app, now on your iPhone — no App Store needed.**
 
-Same idea as the Android app: bring your own key, keep everything on your device.
+0x Sneaky Alpha is a friendly little chat app where *you* pick the AI. Bring your own API key from the provider you like — Anthropic, Google, OpenAI, and more — plug it in once, and start chatting. Your conversations and your keys stay on your phone, not on somebody else's server.
 
-## What's included
+It's the iPhone companion to the 0x Sneaky Alpha Android app: same idea, same neon welcome, made to feel right at home on iOS.
 
-- **Neon intro, name step and time-of-day greeting**, like the Android app.
-- **Providers:** Google (Gemini), OpenAI, Anthropic, DeepSeek, Qwen, Groq, Ollama, Open Router, OpenCode Go, plus custom OpenAI-, Anthropic- or Google-compatible endpoints.
-- **Streaming replies**, a stop button, and a model picker (fetch models or type an id).
-- **Attachments:** photos (resized to 2048 px, HEIC becomes JPEG), text and code files (added to the message like on Android), and PDFs for Anthropic, Google, OpenAI and Open Router.
-- **Branching:** edit a message or regenerate a reply without losing the old branch. Switch with ‹ 1/2 ›.
-- **Memory:** the same memory tools as Android (memory files + active memory).
-- **Web search:** the provider's built-in search (Google, Anthropic, Open Router), or Tavily, Brave, Serper, SearXNG.
-- **Remote MCP servers** over Streamable HTTP or SSE.
-- **Export / import** chats as JSON (keys are never exported).
-- **Works offline** for reading your chats. Sending needs a connection.
+## 🚀 Try it right now
 
-## Privacy and security
+No downloads, no accounts, no Mac, no developer anything:
 
-- Chats, settings and API keys are stored in this app's storage on your iPhone (IndexedDB).
-- Each key is sent only to the provider it belongs to. No analytics. The one exception is OpenCode Go, which blocks direct browser calls: on a Vercel deployment it goes through this site's own proxy function (`web/api/proxy`, chat and models endpoints only, no logging or storage in the code), so that key passes through the deployment on its way to OpenCode.
-- Optional **passphrase lock** (Settings → Security) encrypts your keys with AES-GCM (PBKDF2, 600,000 rounds). Without it, keys are stored unencrypted in the app's storage.
+1. Open **[0x-sneaky-alpha.vercel.app](https://0x-sneaky-alpha.vercel.app)** in **Safari** on your iPhone.
+2. Tap **Share → Add to Home Screen → Add**.
+3. Open **0x Sneaky Alpha** from your Home Screen — it runs full screen, just like a regular app.
+4. Pick a provider, paste your API key, pick a model, and say hello.
 
-## Which providers work from a browser
+Full walkthrough, tips, and troubleshooting: **[INSTALL-IOS.md](INSTALL-IOS.md)** 📖
 
-A web app can only call a provider that allows browser requests (CORS). Each provider row shows a badge, and **Settings → Providers → Test connection** checks it from your phone.
+## ✨ What's inside
 
-| Provider | Status |
-|---|---|
-| Anthropic, Google | Works (checked live) |
-| OpenAI, Open Router | Expected to work (public reports) |
-| DeepSeek, Qwen, Groq | Not yet checked. Use Test connection |
-| OpenCode Go | Via this site's own proxy (built in; works where the `api/` functions are deployed, e.g. Vercel) |
-| Ollama | Your server must allow this site (`OLLAMA_ORIGINS`) and use HTTPS |
+- **Lots of providers:** Google (Gemini), OpenAI, Anthropic, DeepSeek, Qwen, Groq, Ollama, Open Router, OpenCode Go — plus your own custom endpoints if they speak OpenAI, Anthropic, or Google style.
+- **Streaming replies** that arrive word by word, with a stop button and an easy model picker.
+- **Attachments:** photos (HEIC is converted for you), text and code files, and PDFs on the providers that accept them.
+- **Branching chats:** edit a message or regenerate a reply without losing the old version — flip between branches with ‹ 1/2 ›.
+- **Memory:** the app can remember things across chats, just like on Android.
+- **Web search** built in, through your provider or Tavily, Brave, Serper, or SearXNG.
+- **Remote MCP servers** over Streamable HTTP or SSE, if you like your tools fancy.
+- **Export / import** your chats as JSON whenever you want a backup. (Keys are *never* included in an export.)
+- **Works offline** for reading your chats. Sending a message needs a connection.
 
-## Not available on iPhone
+## 🔒 Your keys stay yours
 
-iOS doesn't allow these in a web app, so they stay Android-only:
+This part matters, so here it is plainly:
+
+- Chats, settings, and API keys are stored **only in the app's storage on your iPhone**.
+- Each key is sent only to the provider it belongs to. There is no analytics and no middleman account.
+- The one exception is **OpenCode Go**, which refuses direct browser calls — so those requests pass through this site's own small proxy (`web/api/proxy`, chat and models only). The proxy's code is right here in this repo for anyone to read: it forwards your key to OpenCode and logs and stores nothing.
+- Want a lock on the door? **Settings → Security** lets you set a passphrase that encrypts your keys (AES-GCM, PBKDF2 with 600,000 rounds). You'll enter it when the app opens.
+
+## 📱 iPhone vs 🤖 Android — same app, a few honest differences
+
+Same welcome, same providers, same memory, same branching chats. A web app on iPhone can't do *everything* a native Android app can, because iOS doesn't allow it — so these stay Android-only:
 
 - Local shell (PRoot sandbox)
 - On-device models (llama.cpp)
-- Scheduled tasks and loops that run in the background
+- Scheduled tasks and background loops
 - The on-device provider-setup API
 - DuckDuckGo and Kagi web search (they need a server)
 
-## Build and test
+Everything else made the trip. If a provider can't be called from a browser at all (a CORS limit), the app tells you honestly — every provider row has a status badge, and **Settings → Providers → Test connection** checks it live from your phone. Anthropic and Google are confirmed working; OpenCode Go works through the built-in proxy.
 
-Needs Node 20+.
+## 🛠️ Build and test
 
-```
+For the curious and the contributors — welcome aboard:
+
+```bash
 cd web
-npm install
+npm install          # needs Node 20+
 npm run typecheck
-npm test            # unit tests
-npm run build       # output in web/dist
+npm test             # unit tests
+npm run build        # output in web/dist
 npx playwright test --project=webkit-iphone   # end-to-end, iPhone + WebKit
 ```
 
-`web/dist` is a static site. Host it on any HTTPS static host (GitHub Pages, Vercel, Netlify). The build uses relative paths, so it also works from a sub-folder.
+`web/dist` is a plain static site with relative paths, so it hosts happily on any HTTPS static host (Vercel, Netlify, GitHub Pages), even from a sub-folder. Just note the OpenCode Go proxy needs the `web/api` functions, which Vercel runs out of the box.
 
-See [INSTALL-IPHONE.md](web/INSTALL-IPHONE.md) for install steps.
-
-## License
+## 📄 License
 
 GPL-3.0, same as the rest of this repository. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).
+
+---
+
+*Made for people who like their AI the way they like their coffee: their own keys, their own phone, their own business.* ☕
