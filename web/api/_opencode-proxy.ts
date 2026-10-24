@@ -35,7 +35,8 @@ function jsonError(status: number, message: string): Response {
   });
 }
 
-export async function proxyOpenCode(request: Request, path: string): Promise<Response> {
+/** `upstreamBase` exists only so tests can point the proxy at a local server. */
+export async function proxyOpenCode(request: Request, path: string, upstreamBase = UPSTREAM_BASE): Promise<Response> {
   const method = PROXY_ROUTES[path];
   if (!method) return jsonError(404, 'Not found');
   if (request.method !== method) return jsonError(405, `Method not allowed: use ${method}`);
@@ -48,10 +49,12 @@ export async function proxyOpenCode(request: Request, path: string): Promise<Res
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${UPSTREAM_BASE}/${path}`, {
+    upstream = await fetch(`${upstreamBase}/${path}`, {
       method,
       headers,
-      body: method === 'POST' ? request.body : undefined,
+      // Read the request body in full first: fetch rejects a streamed request body unless the
+      // runtime supports `duplex: 'half'`. Replies still stream back unbuffered.
+      body: method === 'POST' ? await request.arrayBuffer() : undefined,
     });
   } catch {
     return jsonError(502, 'Could not reach OpenCode Go');

@@ -30,7 +30,7 @@ describe('OpenCode Go proxy routing (baseUrlFor)', () => {
 });
 
 describe('OpenCode Go proxy handler', () => {
-  it('relays chat completions: allowlisted URL, only three headers, body streamed through', async () => {
+  it('relays chat completions: allowlisted URL, only three headers, full body forwarded', async () => {
     const calls = mockFetch(() => new Response(streamOf(['data: {}\n\n']), {
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
@@ -58,7 +58,7 @@ describe('OpenCode Go proxy handler', () => {
       'content-type': 'application/json',
       accept: 'text/event-stream',
     });
-    expect(calls[0].init.body).toBe(req.body);
+    expect(new TextDecoder().decode(calls[0].init.body as ArrayBuffer)).toBe(JSON.stringify({ model: 'm', messages: [] }));
   });
 
   it('relays the models list with a GET and no body', async () => {
