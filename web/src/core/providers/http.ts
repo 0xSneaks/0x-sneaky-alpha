@@ -39,8 +39,17 @@ async function errorText(res: Response): Promise<string> {
   return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300) || res.statusText;
 }
 
-function networkHint(label: string): string {
-  return `Couldn't reach ${label}. Either you're offline, or ${label} blocks requests from browser apps (CORS). Use Settings → Providers → Test connection to check.`;
+function networkHint(label: string, url?: string): string {
+  let where = '';
+  if (url) {
+    try {
+      const u = new URL(url, globalThis.location?.href ?? 'http://localhost/');
+      where = globalThis.location && u.origin === globalThis.location.origin ? ` (tried this app's proxy ${u.pathname})` : ` (tried ${u.host})`;
+    } catch {
+      /* ignore */
+    }
+  }
+  return `Couldn't reach ${label}${where}. Either you're offline, or ${label} blocks requests from browser apps (CORS). Use Settings → Providers → Test connection to check.`;
 }
 
 export interface PostOptions {
@@ -64,7 +73,7 @@ export async function postJson(
         res = await fetch(urls[i], { method: 'POST', headers, body: payload, signal: opts.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
       } catch (e) {
         if ((e as Error)?.name === 'AbortError') throw e;
-        throw new ProviderError(networkHint(opts.label), 0, true);
+        throw new ProviderError(networkHint(opts.label, urls[i]), 0, true);
       }
       if (res.ok) return res;
       const msg = redact(await errorText(res), opts.apiKey);
@@ -85,7 +94,7 @@ export async function getJson(url: string, headers: Record<string, string>, labe
     res = await fetch(url, { headers, signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
   } catch (e) {
     if ((e as Error)?.name === 'AbortError') throw e;
-    throw new ProviderError(networkHint(label), 0, true);
+    throw new ProviderError(networkHint(label, url), 0, true);
   }
   if (!res.ok) throw new ProviderError(`${label} ${res.status}: ${redact(await errorText(res), apiKey)}`, res.status);
   return res.json();

@@ -71,13 +71,24 @@ export function providerById(id: string | undefined, s: Settings = settingsStore
   return id ? allProviders(s).find((p) => p.id === id) : undefined;
 }
 
+/** Any opencode.ai URL (old /zen/go/v1 or newer /inference/go/... paths) must go through the proxy:
+ * a direct browser call fails CORS once the x-opencode-session header is added. */
+function isOpenCodeHost(url: string): boolean {
+  try {
+    const h = new URL(url).hostname;
+    return h === 'opencode.ai' || h.endsWith('.opencode.ai');
+  } catch {
+    return false;
+  }
+}
+
 export function baseUrlFor(p: ProviderInfo, s: Settings = settingsStore.get()): string {
   const resolved = (s.providerUrls[p.id] ?? '').trim() || p.defaultBaseUrl;
   // OpenCode Go blocks direct browser calls, so its own upstream URL is
   // always reached through this deployment's same-origin proxy instead
   // (see web/api/_opencode-proxy.ts). A different URL typed for this
   // provider is respected as-is and called directly.
-  if (p.id === 'opencode-go' && resolved.replace(/\/+$/, '') === p.defaultBaseUrl.replace(/\/+$/, '')) {
+  if (p.id === 'opencode-go' && (resolved.replace(/\/+$/, '') === p.defaultBaseUrl.replace(/\/+$/, '') || isOpenCodeHost(resolved))) {
     return OPENCODE_PROXY_BASE;
   }
   return resolved;

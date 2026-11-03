@@ -17,6 +17,13 @@ describe('OpenCode Go proxy routing (baseUrlFor)', () => {
     expect(baseUrlFor(p, s)).toBe('/api/proxy');
   });
 
+  it('proxies any opencode.ai URL, including the newer /inference/go path', () => {
+    const p = providerById('opencode-go', settings())!;
+    for (const u of ['https://opencode.ai/inference/go/openai/v1', 'https://opencode.ai/zen/v1', ' https://opencode.ai/zen/go/v1 ']) {
+      expect(baseUrlFor(p, settings({ providerUrls: { 'opencode-go': u } }))).toBe('/api/proxy');
+    }
+  });
+
   it('respects a different URL typed for OpenCode Go', () => {
     const p = providerById('opencode-go', settings())!;
     const s = settings({ providerUrls: { 'opencode-go': 'https://example.com/v1' } });
