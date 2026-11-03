@@ -1,5 +1,5 @@
 // Settings sections for memory, web search and MCP servers. Licensed under GPL-3.0.
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { newId } from '../core/providers/http';
 import { deleteSecret, hasSecret, secretName, setSecret } from '../core/secrets';
 import { settingsStore, updateSettings, type McpServer, type SearchProvider } from '../core/settings';
@@ -74,6 +74,10 @@ export function McpSection() {
   const [transport, setTransport] = useState<McpServer['transport']>('http');
   const [headers, setHeaders] = useState('');
   const [status, setStatus] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (adding) formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [adding]);
 
   const test = async (m: McpServer) => {
     setStatus((x) => ({ ...x, [m.id]: 'Connecting…' }));
@@ -134,7 +138,7 @@ export function McpSection() {
         </div>
       ))}
       {adding ? (
-        <form class="banner" onSubmit={async (e) => {
+        <form ref={formRef} class="banner" onSubmit={async (e) => {
           e.preventDefault();
           if (!name.trim() || !/^https:\/\/|^http:\/\/(localhost|127\.0\.0\.1)/i.test(url.trim())) return toast('Name and an https URL are required');
           const id = newId('mcp-').slice(0, 16);
