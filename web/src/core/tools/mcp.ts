@@ -1,6 +1,7 @@
 // Remote MCP client over Streamable HTTP or legacy HTTP+SSE (no stdio on iOS). Licensed under GPL-3.0.
 import { readSse } from '../providers/sse';
 import { redact } from '../redact';
+import { mcpEndpoint } from './connectors';
 import type { McpServer } from '../settings';
 import type { ToolDef } from '../types';
 
@@ -19,6 +20,11 @@ export class McpClient {
   private ready: Promise<void> | null = null;
 
   constructor(readonly server: McpServer, private readonly headers: Record<string, string>) {}
+
+  /** Streamable HTTP endpoint: known hosted servers go through this site's relay (no CORS). */
+  private get endpoint(): string {
+    return mcpEndpoint(this.server.url);
+  }
 
   private secretValues(): string[] {
     return Object.values(this.headers);
@@ -96,7 +102,7 @@ export class McpClient {
   private async notify(method: string): Promise<void> {
     const msg = { jsonrpc: '2.0', method };
     if (this.server.transport === 'sse') await this.post(this.sseEndpoint!, msg);
-    else await this.post(this.server.url, msg);
+    else await this.post(this.endpoint, msg);
   }
 
   private async request(method: string, params: unknown, signal?: AbortSignal): Promise<any> {
@@ -110,7 +116,7 @@ export class McpClient {
       await this.post(this.sseEndpoint!, msg, signal);
       return unwrap(await reply, this);
     }
-    const res = await this.post(this.server.url, msg, signal);
+    const res = await this.post(this.endpoint, msg, signal);
     const type = res.headers.get('Content-Type') ?? '';
     if (type.includes('text/event-stream')) {
       for await (const ev of readSse(res.body!, signal)) {

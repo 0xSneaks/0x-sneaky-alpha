@@ -1,5 +1,6 @@
 // Generic web search tool. Licensed under GPL-3.0.
 // DuckDuckGo and Kagi from the Android list need a server (no browser API), so they are not offered.
+// Brave sends no CORS headers, so it goes through this site's own relay (api/brave).
 import { getJson, ProviderError } from '../providers/http';
 import { redact } from '../redact';
 import type { SearchProvider } from '../settings';
@@ -42,7 +43,7 @@ export async function webSearch(provider: SearchProvider, query: string, key: st
       return (j.organic ?? []).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet }));
     }
     case 'brave': {
-      const j = await getJson(`https://api.search.brave.com/res/v1/web/search?count=6&q=${encodeURIComponent(q)}`, { Accept: 'application/json', 'X-Subscription-Token': key }, 'Brave', key, signal);
+      const j = await getJson(`/api/brave?q=${encodeURIComponent(q)}`, { Accept: 'application/json', 'X-Subscription-Token': key }, 'Brave', key, signal);
       return (j.web?.results ?? []).map((r: any) => ({ title: r.title, url: r.url, snippet: r.description }));
     }
     case 'searxng': {
