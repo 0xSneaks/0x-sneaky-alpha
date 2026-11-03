@@ -10,7 +10,7 @@
 //
 // The allowlist is the route table below plus the function files on disk:
 // no other path exists, and any other method is refused. Only the request
-// body and the Authorization, Content-Type and Accept headers are forwarded
+// body and the Authorization, Content-Type, Accept and x-opencode-session headers are forwarded
 // (the Authorization value is the user's own OpenCode key, supplied by the
 // app per request). The upstream reply is streamed straight back.
 //
@@ -26,7 +26,11 @@ export const PROXY_ROUTES: Record<string, string> = {
   models: 'GET',
 };
 
-const FORWARDED_HEADERS = ['authorization', 'content-type', 'accept'] as const;
+// x-opencode-session: OpenCode Go requires a stable per-conversation session id (400 MissingSessionID without it).
+const FORWARDED_HEADERS = ['authorization', 'content-type', 'accept', 'x-opencode-session'] as const;
+
+/** OpenCode asks clients to identify with their own user agent, not a generic HTTP-library name. */
+const USER_AGENT = '0x-sneaky-alpha/1.0 (+https://github.com/0xSneaks/0x-sneaky-alpha)';
 
 function jsonError(status: number, message: string): Response {
   return new Response(JSON.stringify({ error: { message } }), {
@@ -41,7 +45,7 @@ export async function proxyOpenCode(request: Request, path: string, upstreamBase
   if (!method) return jsonError(404, 'Not found');
   if (request.method !== method) return jsonError(405, `Method not allowed: use ${method}`);
 
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'user-agent': USER_AGENT };
   for (const name of FORWARDED_HEADERS) {
     const value = request.headers.get(name);
     if (value) headers[name] = value;

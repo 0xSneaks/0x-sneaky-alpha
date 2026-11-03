@@ -30,7 +30,7 @@ describe('OpenCode Go proxy routing (baseUrlFor)', () => {
 });
 
 describe('OpenCode Go proxy handler', () => {
-  it('relays chat completions: allowlisted URL, only three headers, full body forwarded', async () => {
+  it('relays chat completions: allowlisted URL, only allowlisted headers, full body forwarded', async () => {
     const calls = mockFetch(() => new Response(streamOf(['data: {}\n\n']), {
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
@@ -41,6 +41,7 @@ describe('OpenCode Go proxy handler', () => {
         Authorization: 'Bearer test-key',
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        'x-opencode-session': 'conv-123',
         'X-Should-Not-Forward': 'nope',
         Cookie: 'session=secret',
       },
@@ -57,6 +58,8 @@ describe('OpenCode Go proxy handler', () => {
       authorization: 'Bearer test-key',
       'content-type': 'application/json',
       accept: 'text/event-stream',
+      'x-opencode-session': 'conv-123',
+      'user-agent': '0x-sneaky-alpha/1.0 (+https://github.com/0xSneaks/0x-sneaky-alpha)',
     });
     expect(new TextDecoder().decode(calls[0].init.body as ArrayBuffer)).toBe(JSON.stringify({ model: 'm', messages: [] }));
   });

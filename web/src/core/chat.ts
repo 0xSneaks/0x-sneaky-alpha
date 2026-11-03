@@ -272,7 +272,8 @@ async function generate(conv: Conversation, assistant: Message): Promise<void> {
         temperature: settings.temperature,
         maxTokens: settings.maxTokens,
         nativeSearch: toolSetup.nativeSearch,
-        extraHeaders: provider.extraHeaders,
+        // OpenCode Go routes and caches per conversation; it rejects requests without this header.
+        extraHeaders: provider.id === 'opencode-go' ? { ...provider.extraHeaders, 'x-opencode-session': conv.id } : provider.extraHeaders,
         retryMissingV1: provider.retryMissingV1,
       },
       history: historyToWire(before),
