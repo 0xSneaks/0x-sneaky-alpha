@@ -5,6 +5,7 @@ import { deleteSecret, hasSecret, secretName, setSecret } from '../core/secrets'
 import { settingsStore, updateSettings, type McpServer, type SearchProvider } from '../core/settings';
 import { useStore } from '../core/store';
 import { deleteMemoryFile, getActiveMemory, listMemoryFiles, setActiveMemory, type MemoryFile } from '../core/tools/memory';
+import { CONNECTORS, mcpRelayIdFor, type Connector } from '../core/tools/connectors';
 import { mcpClientFor } from '../core/tools/host';
 import { SEARCH_LABEL } from '../core/tools/websearch';
 import { toast } from './toast';
@@ -84,8 +85,40 @@ export function McpSection() {
     }
   };
 
+  const added = new Set(s.mcpServers.map((m) => mcpRelayIdFor(m.url)).filter(Boolean));
+  const missing = CONNECTORS.filter((c) => !added.has(c.id));
+  const addConnector = async (c: Connector) => {
+    if (c.needsToken) {
+      setName(c.name); setUrl(c.url); setTransport('http'); setHeaders('Authorization: Bearer ');
+      setAdding(true);
+      return toast('Paste your token after "Bearer ", then tap Add');
+    }
+    const server: McpServer = { id: newId('mcp-').slice(0, 16), name: c.name, url: c.url, transport: 'http', enabled: true };
+    await updateSettings((st) => ({ mcpServers: [...st.mcpServers, server] }));
+    void test(server);
+  };
+  const addAllFree = async () => {
+    for (const c of missing.filter((x) => !x.needsToken)) await addConnector(c);
+  };
+
   return (
     <div>
+      {missing.length > 0 && (
+        <div class="banner" data-testid="mcp-connectors">
+          <b>Connectors</b>
+          {missing.map((c) => (
+            <div class="btn-row" key={c.id} style={{ marginTop: 6, alignItems: 'center' }}>
+              <button class="btn" data-testid={`connector-${c.id}`} onClick={() => addConnector(c)}>+ {c.name}</button>
+              <span class="subtle">{c.blurb}</span>
+            </div>
+          ))}
+          {missing.filter((c) => !c.needsToken).length > 1 && (
+            <div class="btn-row" style={{ marginTop: 8 }}>
+              <button class="btn primary" data-testid="connectors-add-free" onClick={addAllFree}>Add all free</button>
+            </div>
+          )}
+        </div>
+      )}
       {s.mcpServers.map((m) => (
         <div class="banner" key={m.id} data-testid="mcp-server">
           <label class="check" style={{ minHeight: 0 }}>
@@ -124,7 +157,7 @@ export function McpSection() {
       ) : (
         <button class="btn" data-testid="mcp-add" onClick={() => setAdding(true)}>+ MCP server</button>
       )}
-      <p class="subtle">Remote servers only (HTTP or SSE). The server must allow browser apps (CORS) and expose the Mcp-Session-Id header.</p>
+      <p class="subtle">Remote servers only (HTTP or SSE). Connectors go through this site’s own relay. Any other server must allow browser apps (CORS) and expose the Mcp-Session-Id header.</p>
     </div>
   );
 }
